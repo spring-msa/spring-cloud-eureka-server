@@ -1,0 +1,50 @@
+name: Spring Docker Image CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Get Project Version
+        uses: thecodemonkey/action-get-gradle-version@master
+        id: version
+        with:
+          file: build.gradle.kts
+
+      - name: Build Image with Gradle
+        id: gradle-build
+        run: ./gradlew bootBuildImage
+
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push to DockerHub
+        run: |
+          docker tag spring-cloud-eureka-server:${{ steps.version.outputs.version }} ${{ secrets.DOCKERHUB_USERNAME }}/spring-cloud-eureka-server:${{ steps.version.outputs.version }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/spring-cloud-eureka-server:${{ steps.version.outputs.version }}

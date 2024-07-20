@@ -1,0 +1,9 @@
+# project.toml
+
+[project]
+name = "your-app-name"
+version = "1.0"
+
+[[build.env]]
+name = "PORT"
+value = "8080"
